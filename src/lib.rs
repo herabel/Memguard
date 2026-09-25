@@ -2,9 +2,18 @@ pub mod signals;
 pub mod maps;
 pub mod telemetry;
 
+#[used]
+#[unsafe(link_section = ".init_array")]
+static INIT: extern "C" fn() = memguard_init;
 #[unsafe(no_mangle)]
 pub extern "C" fn memguard_init() {
     let _ = signals::install_handlers();
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn napi_register_module_v1(_env: *mut libc::c_void, exports: *mut libc::c_void) -> *mut libc::c_void {
+    let _ = signals::install_handlers();
+    exports
 }
 
 #[cfg(test)]
