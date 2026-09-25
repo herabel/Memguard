@@ -5,11 +5,14 @@ pub mod telemetry;
 #[used]
 #[unsafe(link_section = ".init_array")]
 static INIT: extern "C" fn() = memguard_init;
+
+/// A C entry point
 #[unsafe(no_mangle)]
 pub extern "C" fn memguard_init() {
     let _ = signals::install_handlers();
 }
 
+/// process.dlopen() requires a Node-API entry
 #[unsafe(no_mangle)]
 pub extern "C" fn napi_register_module_v1(_env: *mut libc::c_void, exports: *mut libc::c_void) -> *mut libc::c_void {
     let _ = signals::install_handlers();
