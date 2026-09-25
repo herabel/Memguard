@@ -1,6 +1,11 @@
-mod signals;
-mod maps;
-mod telemetry;
+pub mod signals;
+pub mod maps;
+pub mod telemetry;
+
+#[unsafe(no_mangle)]
+pub extern "C" fn memguard_init() {
+    let _ = signals::install_handlers();
+}
 
 #[cfg(test)]
 mod tests {
