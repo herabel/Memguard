@@ -6,8 +6,11 @@ mod telemetry;
 mod tests {
     use std::path::PathBuf;
     use crate::maps::find_region;
+    use crate::signals::install_handlers;
     use super::*;
 
+
+    // MAP TESTS
     #[test]
     fn check_default_map() {
         let map = maps::parse_maps("5956cb1b9000-5956cb1bb000 r--p 00000000 08:02 40643448 /usr/bin/cat");
@@ -38,4 +41,11 @@ mod tests {
         assert!(find_region(0x2000, &regions).is_none()); // returns upper bound exclusive, so here should be none
         assert!(find_region(0x2001, &regions).is_none());
     }
+
+    // SIGNALS TESTS
+    #[test]
+    fn test_install_handlers() {
+        assert!(install_handlers().is_ok());
+    }
+
 }
