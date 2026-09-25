@@ -1,5 +1,5 @@
-pub mod signals;
 pub mod maps;
+pub mod signals;
 pub mod telemetry;
 
 #[used]
@@ -14,23 +14,26 @@ pub extern "C" fn memguard_init() {
 
 /// process.dlopen() requires a Node-API entry
 #[unsafe(no_mangle)]
-pub extern "C" fn napi_register_module_v1(_env: *mut libc::c_void, exports: *mut libc::c_void) -> *mut libc::c_void {
+pub extern "C" fn napi_register_module_v1(
+    _env: *mut libc::c_void,
+    exports: *mut libc::c_void,
+) -> *mut libc::c_void {
     let _ = signals::install_handlers();
     exports
 }
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
+    use super::*;
     use crate::maps::find_region;
     use crate::signals::install_handlers;
-    use super::*;
-
+    use std::path::PathBuf;
 
     // MAP TESTS
     #[test]
     fn check_default_map() {
-        let map = maps::parse_maps("5956cb1b9000-5956cb1bb000 r--p 00000000 08:02 40643448 /usr/bin/cat");
+        let map =
+            maps::parse_maps("5956cb1b9000-5956cb1bb000 r--p 00000000 08:02 40643448 /usr/bin/cat");
         assert_eq!(map[0].start, 0x5956cb1b9000);
         assert_eq!(map[0].end, 0x5956cb1bb000);
         assert_eq!(map[0].path, Some(PathBuf::from("/usr/bin/cat")));
@@ -64,5 +67,4 @@ mod tests {
     fn test_install_handlers() {
         assert!(install_handlers().is_ok());
     }
-
 }

@@ -34,15 +34,12 @@ fn parse_line(line: &str) -> Option<MemoryRegion> {
     let raw_path = split_by_whitespaces.nth(4); // jump directly to 6th column, directly to the path
     let path = raw_path.map(PathBuf::from);
 
-    Some(MemoryRegion{
-        start,
-        end,
-        path
-    })
+    Some(MemoryRegion { start, end, path })
 }
-
 
 /// Finds the memory region that contains the given address
 pub fn find_region(addr: usize, region_slice: &[MemoryRegion]) -> Option<&MemoryRegion> {
-    region_slice.iter().find(|r| addr >= r.start && addr < r.end)
+    region_slice
+        .iter()
+        .find(|r| addr >= r.start && addr < r.end)
 }

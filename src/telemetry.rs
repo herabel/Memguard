@@ -1,6 +1,7 @@
 //! Data structures and serialization for crash telemetry events.
 
 use serde::{Deserialize, Serialize};
+use std::time::SystemTime;
 
 #[derive(Serialize, Deserialize)]
 pub struct Registers {
@@ -10,7 +11,7 @@ pub struct Registers {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct CrashTelemetry{
+pub struct CrashTelemetry {
     pub event_type: String,
     pub timestamp: SystemTime,
     pub pid: u32,
@@ -23,7 +24,7 @@ pub struct CrashTelemetry{
     pub registers: Registers,
 }
 
-impl CrashTelemetry{
+impl CrashTelemetry {
     pub fn to_json(&self) -> Result<String, serde_json::Error> {
         serde_json::to_string_pretty(self)
     }

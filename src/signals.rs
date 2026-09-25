@@ -1,9 +1,9 @@
 //! A module for POSIX signal processing.
 //! Creates a ALT_STACK_SIZE alternate stack and... process the errors with telemetry!
 
-use std::time::SystemTime;
 use libc;
-use libc::{stack_t, ucontext_t, REG_RIP, REG_RSP, REG_RBP};
+use libc::{REG_RBP, REG_RIP, REG_RSP, stack_t, ucontext_t};
+use std::time::SystemTime;
 
 const ALT_STACK_SIZE: usize = 64 * 1024;
 
@@ -14,10 +14,12 @@ extern "C" fn crash_handler(
 ) {
     unsafe {
         let fault_addr = (*info).si_addr() as usize;
-        let ucontext = ucontext as  *const ucontext_t;
-        let (rip, rsp, rbp) = ((*ucontext).uc_mcontext.gregs[REG_RIP as usize] as usize,
-                               (*ucontext).uc_mcontext.gregs[REG_RSP as usize] as usize,
-                               (*ucontext).uc_mcontext.gregs[REG_RBP as usize] as usize);
+        let ucontext = ucontext as *const ucontext_t;
+        let (rip, rsp, rbp) = (
+            (*ucontext).uc_mcontext.gregs[REG_RIP as usize] as usize,
+            (*ucontext).uc_mcontext.gregs[REG_RSP as usize] as usize,
+            (*ucontext).uc_mcontext.gregs[REG_RBP as usize] as usize,
+        );
 
         let signal_name = match sig {
             libc::SIGSEGV => "SIGSEGV",
@@ -25,35 +27,37 @@ extern "C" fn crash_handler(
             libc::SIGABRT => "SIGABRT",
             libc::SIGILL => "SIGILL",
             _ => "UNKNOWN",
-        }.to_string();
-
+        }
+        .to_string();
 
         if let Ok(map) = std::fs::read_to_string("/proc/self/maps") {
             let regions = crate::maps::parse_maps(&map);
-            if let Some(region) = crate::maps::find_region(rip, &regions){
+            if let Some(region) = crate::maps::find_region(rip, &regions) {
                 let offset = rip - region.start;
 
-                let registers = crate::telemetry::Registers{
-                    rip,
-                    rsp,
-                    rbp,
-                };
+                let registers = crate::telemetry::Registers { rip, rsp, rbp };
 
-                let telemetry = crate::telemetry::CrashTelemetry{
+                let telemetry = crate::telemetry::CrashTelemetry {
                     event_type: "MEMORY_CORRUPTION_DETECTED".to_string(),
                     timestamp: SystemTime::now(),
                     pid: std::process::id(),
                     signal: signal_name,
                     fault_address: fault_addr,
                     instruction_pointer: rip,
-                    faulting_module: region.path.as_ref().map(|p| p.to_string_lossy().to_string()),
+                    faulting_module: region
+                        .path
+                        .as_ref()
+                        .map(|p| p.to_string_lossy().to_string()),
                     module_base_address: Some(region.start),
                     relative_offset_address: Some(offset),
                     registers,
                 };
 
                 if let Ok(json) = telemetry.to_json() {
-                    eprintln!("\n=== [MEMGUARD TELEMETRY EVENT] ===\n{}\n==================================\n", json);
+                    eprintln!(
+                        "\n=== [MEMGUARD TELEMETRY EVENT] ===\n{}\n==================================\n",
+                        json
+                    );
                 }
             };
         };
@@ -72,7 +76,7 @@ pub fn install_handlers() -> Result<(), std::io::Error> {
             return Err(std::io::Error::last_os_error());
         }
 
-        let stack_t = stack_t{
+        let stack_t = stack_t {
             ss_sp: stack,
             ss_flags: 0,
             ss_size: ALT_STACK_SIZE,
@@ -84,7 +88,7 @@ pub fn install_handlers() -> Result<(), std::io::Error> {
 
         let mut sa = std::mem::zeroed::<libc::sigaction>();
 
-        sa.sa_sigaction = crash_handler as *const() as usize;
+        sa.sa_sigaction = crash_handler as *const () as usize;
         sa.sa_flags = libc::SA_SIGINFO | libc::SA_ONSTACK | libc::SA_RESETHAND;
 
         libc::sigemptyset(&mut sa.sa_mask);
