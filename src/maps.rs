@@ -1,4 +1,3 @@
-use std::io::Error;
 use std::path::{PathBuf};
 
 /// Represents a virtual memory region parsed from /proc/self/maps
@@ -16,10 +15,8 @@ pub struct MemoryRegion {
 }
 
 /// Parses maps from given content (e.g. from proc/self/maps itself)
-pub fn parse_maps(content: &str) -> Result<Vec<MemoryRegion>, Error> {
-    let maps: Vec<MemoryRegion> = content.lines().filter_map(parse_line).collect();
-
-    Ok(maps)
+pub fn parse_maps(content: &str) -> Vec<MemoryRegion> {
+    content.lines().filter_map(parse_line).collect()
 }
 
 /// A helper for parse_map to prevent bloating
