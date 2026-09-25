@@ -1,4 +1,5 @@
-use std::time::SystemTime;
+//! Data structures and serialization for crash telemetry events.
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
