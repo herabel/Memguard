@@ -28,7 +28,7 @@
 - **sigaltstack**: Allocates a separate 64 KB stack via malloc. Prevents Double Fault / silent SIGKILL if the crash was caused by stack overflow.
 - **SA_RESETHAND**: Restores the default OS handler after our hook runs, so re-raising the signal (libc::raise) allows standard core dumps and Node backtraces to work.
 - **Relative Offset Calculation**:
-  $$\text{relative_offset} = \text{RIP} - \text{region.start}$$
+  $$relative_offset = RIP - region.start$$
   Allows correlating crashes with ELF debug symbols despite ASLR.
 - **Zero-Code Agent**: Exports napi_register_module_v1 via C ABI so Node loads it via process.dlopen. Works transparently via NODE_OPTIONS="--require ./sdk/agent.js".
 
