@@ -1,5 +1,5 @@
 use libc;
-use libc::{stack_t, ucontext_t, REG_RIP};
+use libc::{stack_t, ucontext_t, REG_RIP, REG_RSP, REG_RBP};
 
 const ALT_STACK_SIZE: usize = 64 * 1024;
 
@@ -11,7 +11,18 @@ extern "C" fn crash_handler(
     unsafe {
         let fault_addr = (*info).si_addr() as usize;
         let ucontext = ucontext as  *const ucontext_t;
-        let rip = (*ucontext).uc_mcontext.gregs[REG_RIP as usize] as usize;
+        let (rip, rsp, rbp) = ((*ucontext).uc_mcontext.gregs[REG_RIP as usize] as usize,
+                               (*ucontext).uc_mcontext.gregs[REG_RSP as usize] as usize,
+                               (*ucontext).uc_mcontext.gregs[REG_RBP as usize] as usize);
+
+        let signal_name = match sig {
+            libc::SIGSEGV => "SIGSEGV",
+            libc::SIGBUS => "SIGBUS",
+            libc::SIGABRT => "SIGABRT",
+            libc::SIGILL => "SIGILL",
+            _ => "UNKNOWN",
+        }.to_string();
+
 
         if let Ok(map) = std::fs::read_to_string("/proc/self/maps") {
             let regions = crate::maps::parse_maps(&map);
