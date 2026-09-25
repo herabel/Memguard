@@ -1,4 +1,6 @@
-use std::path::{PathBuf};
+//! Parser and lookup utilities for Linux /proc/self/maps.
+
+use std::path::PathBuf;
 
 /// Represents a virtual memory region parsed from /proc/self/maps
 ///
