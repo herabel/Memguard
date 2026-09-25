@@ -1,3 +1,7 @@
+//! A module for POSIX signal processing.
+//! Creates a ALT_STACK_SIZE alternate stack and... process the errors with telemetry!
+
+use std::time::SystemTime;
 use libc;
 use libc::{stack_t, ucontext_t, REG_RIP, REG_RSP, REG_RBP};
 
@@ -29,13 +33,28 @@ extern "C" fn crash_handler(
             if let Some(region) = crate::maps::find_region(rip, &regions){
                 let offset = rip - region.start;
 
-                eprintln!("\n=== [MEMGUARD CRASH DETECTED] ===");
-                eprintln!("Signal: {}", sig);
-                eprintln!("Fault Address: 0x{:x}", fault_addr);
-                eprintln!("Instruction Pointer (RIP): 0x{:x}", rip);
-                eprintln!("Module: {:?}", region.path);
-                eprintln!("Offset inside module: 0x{:x}", offset);
-                eprintln!("=================================\n");
+                let registers = crate::telemetry::Registers{
+                    rip,
+                    rsp,
+                    rbp,
+                };
+
+                let telemetry = crate::telemetry::CrashTelemetry{
+                    event_type: "MEMORY_CORRUPTION_DETECTED".to_string(),
+                    timestamp: SystemTime::now(),
+                    pid: std::process::id(),
+                    signal: signal_name,
+                    fault_address: fault_addr,
+                    instruction_pointer: rip,
+                    faulting_module: region.path.as_ref().map(|p| p.to_string_lossy().to_string()),
+                    module_base_address: Some(region.start),
+                    relative_offset_address: Some(offset),
+                    registers,
+                };
+
+                if let Ok(json) = telemetry.to_json() {
+                    eprintln!("\n=== [MEMGUARD TELEMETRY EVENT] ===\n{}\n==================================\n", json);
+                }
             };
         };
 
